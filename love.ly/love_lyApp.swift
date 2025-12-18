@@ -7,9 +7,11 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseCore
 
 @main
 struct love_lyApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
