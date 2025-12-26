@@ -10,7 +10,7 @@ internal import Combine
 
 
 struct ProductItemLocal: Codable {
-    var complimentsStore: [String]
+    var complimentsStore: [String: [String]]
     var prompts: [String]
     var promptsResponse: [String : String]
     
@@ -22,7 +22,10 @@ struct ProductItemLocal: Codable {
         
     }
     init() {
-        self.complimentsStore = []
+        self.complimentsStore = [
+            "personality": [], "appearence": [], "Insecurity": [], "dreams": [],
+            "smallthings": [], "hobbies": [], "songs": [], "future": [], "talents": [], "other": []
+        ]
         self.prompts = []
         self.promptsResponse = [:]
     }
@@ -38,7 +41,7 @@ struct ProductItemLocal: Codable {
 @MainActor
 final class ProductSetupManager: ObservableObject {
     
-    @Published var complimentsStore: [String] = []
+    @Published var complimentsStore: [String: [String]] = [:]
     @Published var prompts: [String] = []
     @Published var promptsResponse: [String : String] = [:]
     @Published var current: String = ""
@@ -46,11 +49,15 @@ final class ProductSetupManager: ObservableObject {
     
     static let shared = ProductSetupManager()
     init() {
-        self.complimentsStore = []
+        self.complimentsStore = [:]
         self.prompts = []
         self.promptsResponse = [:]
         self.current = ""
         self.counts = 0
+    }
+    
+    func removeCompliment(set: String, compliment: String) {
+        self.complimentsStore[set]?.removeAll { $0 == compliment }
     }
     
     func loadProgress() async throws {
@@ -64,8 +71,8 @@ final class ProductSetupManager: ObservableObject {
         
     }
     
-    func addComplimentsStage() {
-        self.complimentsStore.append(self.current)
+    func addComplimentsStage(prompt: String) {
+        self.complimentsStore[prompt, default: []].append(self.current)
         self.current = ""
     }
     
@@ -88,9 +95,9 @@ final class ProductSetupManager: ObservableObject {
     
     func finalizeSetup() async throws -> Bool {
         do {
-            if self.counts >= 10 {
+            if self.counts >= 0 {
                 try await FireBaseProductManager.shared.finalizeSetup(documentData: self.complimentsStore)
-                self.complimentsStore = []
+                self.complimentsStore = [:]
                 return true
             } else {return false}
         } catch {return false}

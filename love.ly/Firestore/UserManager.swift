@@ -15,6 +15,7 @@ struct DBUser: Codable {
     let photoUrl: String?
     let dateCreated: Date?
     var productHolder: Bool
+    var productFinished: Bool
     var productActive: Bool?
     var productRecieving: Bool?
     
@@ -25,6 +26,7 @@ struct DBUser: Codable {
         self.photoUrl = auth.photoUrl
         self.dateCreated = Date()
         self.productHolder = false
+        self.productFinished = false
         self.productActive = false
         self.productRecieving = false
     }
@@ -58,26 +60,14 @@ final class UserManager {
         return decoder
     }()
     
-    func createNewUser(user: DBUser) async throws {
+    func createNewUser(user: DBUser) throws {
         try userDocument(userId: user.userId).setData(from: user, merge: false, encoder: encoder)
 
     }
     
     func createNewUser(auth: AuthDataResultModel) async throws {
-        var userData: [String: Any] = [
-            "user_id" : auth.uid,
-            "date_created" : Timestamp(),
-            "product_holder" : false
-            
-        ]
-        if let email = auth.email {
-            userData["email"] = email
-        }
-        if let photoUrl = auth.photoUrl {
-            userData["photo_url"] = photoUrl
-        }
-        
-        try await userDocument(userId: auth.uid).setData(userData, merge: false)
+        let user = DBUser(auth: auth)
+        try createNewUser(user: user)
     }
     
     func getUser(userId: String) async throws -> DBUser {

@@ -16,7 +16,7 @@ struct ProductItem: Codable {
     var startDate: Date?
     var recieverId: String?
     var compliments : [String]
-    var complimentsStore: [String]
+    var complimentsStore: [String: [String]]
     var prompts: [String]
     var promptsResponse: [String : String]
     
@@ -25,7 +25,7 @@ struct ProductItem: Codable {
         self.senderId = userId
         self.started = false
         self.compliments = []
-        self.complimentsStore = []
+        self.complimentsStore = [:]
         self.prompts = []
         self.promptsResponse = [:]
         
@@ -33,8 +33,8 @@ struct ProductItem: Codable {
 }
 
 struct ComplimentsStoreUpdate: Codable {
-    var complimentsStore: [String]
-    init (compliments: [String]) {
+    var complimentsStore: [String : [String]]
+    init (compliments: [String : [String]]) {
         self.complimentsStore = compliments
     }
 }
@@ -42,8 +42,8 @@ struct ComplimentsStoreUpdate: Codable {
 struct ComplimentsUpdate: Codable {
     var compliments: [String]
     var complimentsStore: [String]
-    init (compliments: [String]) {
-        self.compliments = compliments
+    init (compliments: [String : [String]]) {
+        self.compliments = Array(compliments.values.joined())
         self.complimentsStore = []
     }
 }
@@ -104,7 +104,7 @@ final class FireBaseProductManager {
     }
     
     func getUser() async throws  -> DBUser {
-        for i in Range(0...2) {
+        for _ in Range(0...2) {
             if let user = self.user { return user }
             else { try await _ = updateUser() }
         }
@@ -147,7 +147,7 @@ final class FireBaseProductManager {
         }
     }
     
-    func getComplimentsStore() async throws -> [String] {
+    func getComplimentsStore() async throws -> [String: [String]] {
         do {
             let compliments = try await getUsersProduct().complimentsStore
             return compliments
@@ -165,7 +165,7 @@ final class FireBaseProductManager {
         }
     }
     
-    func updateComplimentsStore(documentData: [String]) async throws {
+    func updateComplimentsStore(documentData: [String: [String]]) async throws {
         do {
             let userId = try await updateUser()
             let docRef = productDocumentRef(userId: userId)
@@ -183,7 +183,7 @@ final class FireBaseProductManager {
             
     }
     
-    func finalizeSetup(documentData: [String]) async throws {
+    func finalizeSetup(documentData: [String: [String]]) async throws {
         do {
             let userId = try await updateUser()
             let docRef = productDocumentRef(userId: userId)
@@ -192,7 +192,9 @@ final class FireBaseProductManager {
             }
             let data = ComplimentsUpdate(compliments: documentData)
             try docRef.setData(from: data, merge: true, encoder: encoder)
+            try await userDocument(userId: userId).updateData(["product_finished" : true])
         } catch {
+            print("Fail at firebase finalization")
             throw NSError(domain: "ProductManager", code: 11, userInfo: [NSLocalizedDescriptionKey: "UpdateComplimentsStore Failed."])
         }
         

@@ -22,10 +22,12 @@ final class ShopViewModel: ObservableObject {
 struct ShopView: View {
     
     @State private var productHolder: Bool = false
+    @State private var productFinished: Bool = false
+    @State private var productActive: Bool = false
     @State private var showSetupView: Bool = false
     @StateObject private var viewModel = ShopViewModel()
     var body: some View {
-        VStack {
+        List {
             if !productHolder {
                 Button("Purchase Product") {
                     Task {
@@ -39,15 +41,25 @@ struct ShopView: View {
                         }
                     }
             } else {
-                Button("Product Setup"){
-                    showSetupView = true
+                if productFinished {
+                    if productActive {
+                        Text("View Progress")
+                    } else {
+                        Text("Share Link")
+                    }
+                } else {
+                    Button("Product Setup"){
+                        showSetupView = true
+                    }
                 }
-                }
+            }
             
         }
         .task {
             try? await viewModel.loadCurrentUser()
             productHolder = viewModel.user?.productHolder ?? false
+            productFinished = viewModel.user?.productFinished ?? false
+            productActive = viewModel.user?.productActive ?? false
         }
         .fullScreenCover(isPresented: $showSetupView) {
             NavigationStack {
