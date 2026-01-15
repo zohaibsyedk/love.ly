@@ -1,0 +1,7 @@
+connectorId: lovely
+generate:
+  swiftSdk:
+    - outputDir: ../../../lovelysdks
+      package: LovelySDK
+    - outputDir: ../../../FirebaseDataConnectGenerated
+      package: DataConnectGenerated

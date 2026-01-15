@@ -1,0 +1,16 @@
+type User @table {
+  email: String!
+  dateCreated: Timestamp!
+  productActive: Boolean!
+  productFinished: Boolean!
+  productHolder: ComplimentProduct
+  productReceiving: ComplimentProduct
+}
+
+type ComplimentProduct @table {
+  started: Boolean!
+  compliments: [String]
+  complimentStore: [String]
+  sender: User!
+  receiver: User
+}

@@ -1,0 +1,188 @@
+mutation CreateComplimentProduct(
+    $senderId: UUID!
+    $compliments: [String!]
+    $complimentsStore: [String!]
+) @auth(level: USER) {
+    complimentProduct_insert(
+        data: {
+            sender: {id: $senderId}
+            compliments: $compliments
+            complimentStore: $complimentsStore
+            started: false
+        }
+    ) 
+}
+
+
+mutation LinkProductToCreator(
+  $userId: UUID!
+  $productId: UUID!
+) @auth(level: USER) {
+  user_update(
+    key: { id: $userId }
+    data: { productHolder: { id: $productId}} 
+  ) 
+}
+
+mutation LinkProductToReceiver(
+  $userId: UUID!
+  $productId: UUID!
+) @auth(level: USER) {
+  user_update(
+    key: { id: $userId }
+    data: { productReceiving: {id: $productId}}
+  ) 
+}
+
+mutation LinkReceiverToProduct(
+  $userId: UUID!
+  $productId: UUID!
+) @auth(level: USER) {
+  complimentProduct_update(
+    key: { id: $productId}
+    data: { receiver: {id: $userId}}
+  ) 
+}
+
+mutation ToggleActivateUserProduct(
+    $userId: UUID!
+    $activate: Boolean!
+) @auth(level: USER) {
+    user_update(
+        key: { id: $userId }
+        data: { productActive: $activate}
+    )
+}
+
+mutation StartComplimentProduct(
+    $productId: UUID!
+) @auth(level: USER) {
+    complimentProduct_update(
+        key: { id: $productId }
+        data: { started: true }
+    ) 
+}
+
+mutation UpdateComplimentStore(
+    $productId: UUID!
+    $newComplimentStore: [String!]
+) @auth(level: USER) {
+    complimentProduct_update(
+        key: { id: $productId }
+        data: { complimentStore: $newComplimentStore }
+    ) 
+}
+
+mutation UpdateCompliments(
+    $productId: UUID!
+    $newCompliments: [String!]
+) @auth(level: USER) {
+    complimentProduct_update(
+        key: { id: $productId }
+        data: { compliments: $newCompliments }
+    ) 
+}
+
+mutation createUser(
+    $id: UUID!
+    $email: String
+    $dateCreated: Timestamp!
+    $productActive: Boolean!
+    $productFinished: Boolean
+) @auth(level: USER) {
+    user_insert(
+        data: {
+            id: $id
+            email: $email
+            dateCreated: $dateCreated
+            productActive: $productActive
+            productFinished: $productFinished
+        }
+    )
+}
+
+mutation UpdateProductActive(
+    $id: UUID!
+    $productActive: Boolean
+) @auth(level: USER) {
+    user_update(
+        key: {id: $id},
+        data: { productActive: $productActive}
+    )
+}
+
+mutation UpdateProductFinished(
+    $id: UUID!
+    $productFinished: Boolean
+) @auth(level: USER) {
+    user_update(
+        key: {id: $id},
+        data: { productFinished: $productFinished}
+    )
+}
+
+query GetOtherUser(
+    $id: UUID!
+) @auth(level: USER) {
+    user(key: {id: $id}) {
+        id
+        email
+        dateCreated
+        productActive
+        productFinished
+        productHolder{
+            id
+        }
+        productReceiving{
+            id
+        }
+    }
+}
+
+query GetUser @auth(level: USER) {
+  user(key: {id_expr: "auth.uid"}) {
+    id
+    email
+    productActive
+    productFinished
+    dateCreated
+    productHolder{
+        id
+    }
+    productReceiving{
+        id
+    }
+  }
+}
+
+query GetGift(
+    $id: UUID!
+) @auth(level: USER) {
+    complimentProduct(key:{ id: $id }) {
+        started
+        compliments
+        complimentStore
+        sender {
+            id
+        }
+        receiver {
+            id
+        }
+    }
+}
+
+query GetUsersGift(
+    $id: UUID
+) @auth(level: USER) {
+    complimentProducts(
+        where: {
+            sender: {
+                id: {eq: $id}
+            }
+        }
+        limit: 1
+    ){
+        id
+    }
+}
+

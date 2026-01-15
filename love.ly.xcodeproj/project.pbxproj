@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		666891832F18B6A2005EAD74 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 666891822F18B6A1005EAD74 /* StoreKit.framework */; };
 		66A089842EF38ADA00557A4B /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 66A089832EF38ADA00557A4B /* FirebaseAI */; };
 		66A089862EF38ADA00557A4B /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = 66A089852EF38ADA00557A4B /* FirebaseAILogic */; };
 		66A089882EF38ADA00557A4B /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 66A089872EF38ADA00557A4B /* FirebaseAnalytics */; };
@@ -38,6 +39,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		666891822F18B6A1005EAD74 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		66A089512EF37E7400557A4B /* love.ly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = love.ly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A089622EF37E7600557A4B /* love.lyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = love.lyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A0896C2EF37E7600557A4B /* love.lyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = love.lyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +84,7 @@
 				66A0898A2EF38ADA00557A4B /* FirebaseAppCheck in Frameworks */,
 				66A0898E2EF38ADA00557A4B /* FirebaseAuth in Frameworks */,
 				66A089862EF38ADA00557A4B /* FirebaseAILogic in Frameworks */,
+				666891832F18B6A2005EAD74 /* StoreKit.framework in Frameworks */,
 				66A089942EF38ADA00557A4B /* FirebaseFunctions in Frameworks */,
 				66A0898C2EF38ADA00557A4B /* FirebaseAppDistribution-Beta in Frameworks */,
 				66A089842EF38ADA00557A4B /* FirebaseAI in Frameworks */,
@@ -116,6 +119,7 @@
 				66A089532EF37E7400557A4B /* love.ly */,
 				66A089652EF37E7600557A4B /* love.lyTests */,
 				66A0896F2EF37E7600557A4B /* love.lyUITests */,
+				66BA33732F0DD54500CA0CBF /* Frameworks */,
 				66A089522EF37E7400557A4B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -128,6 +132,14 @@
 				66A0896C2EF37E7600557A4B /* love.lyUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		66BA33732F0DD54500CA0CBF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				666891822F18B6A1005EAD74 /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -246,6 +258,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				66A089822EF38ADA00557A4B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				66FA42FD2F0EEBF60069D7F2 /* XCLocalSwiftPackageReference "lovelySDKGenerated/lovelySDK" */,
+				66F6C4972F0EF06D001A0F62 /* XCLocalSwiftPackageReference "../FirebaseDataConnectGenerated/DataConnectGenerated" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 66A089522EF37E7400557A4B /* Products */;
@@ -630,6 +644,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		66F6C4972F0EF06D001A0F62 /* XCLocalSwiftPackageReference "../FirebaseDataConnectGenerated/DataConnectGenerated" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../FirebaseDataConnectGenerated/DataConnectGenerated;
+		};
+		66FA42FD2F0EEBF60069D7F2 /* XCLocalSwiftPackageReference "lovelySDKGenerated/lovelySDK" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = lovelySDKGenerated/lovelySDK;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		66A089822EF38ADA00557A4B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
