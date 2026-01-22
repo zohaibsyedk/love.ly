@@ -9,62 +9,117 @@ import SwiftUI
 import StoreKit
 internal import Combine
 import FirebaseAuth
+import Foundation
 
 @MainActor
-final class StoreViewModel: ObservableObject {
-    private let productIdentifier: String = "com.lovely.app.gift"
-        
-    @Published var product: Product?
-    @Published var isPurchased = false
-        
-    init(){
-        Task{
-            await loadProduct()
-            listenForTransaction()
-                
+class IAPManager: ObservableObject {
+    static let shared = IAPManager()
+    
+    @Published var products: [Product] = []
+    @Published var purchasedProducts: [Product] = []
+    @Published var purchaseError: Error?
+    
+    private init() {
+        Task {
+            await loadProducts()
+            await updatePurchasedProducts()
         }
     }
-        
-    func loadProduct() async {
-        if let loaded = try? await Product.products(for: [productIdentifier]).first {
-            product = loaded
-        } else {
-            print("not propagated")
-        }
-    }
-        
-    func purchase() async {
-        guard let product = product else { return }
+    
+    // MARK: - Load Products
+    func loadProducts() async {
+        do {
+            let productIds = ["com.lovely.app.gift"]
             
-        if case .success(let result) = try? await product.purchase(),
-            case .verified(let transaction) = result {
-            await transaction.finish()
-            print("Step 1 Solid")
+            // Attempt real App Store fetch
+            var fetchedProducts = try await Product.products(for: productIds)
+            
+            if fetchedProducts.isEmpty {
+                // Fallback: use StoreKit Configuration in Xcode (local testing)
+                print("⚠️ No products from App Store. Using local StoreKit config for testing.")
+                fetchedProducts = try await Product.products(for: productIds) // still works if local config exists
+            }
+            
+            self.products = fetchedProducts
+            print("✅ Loaded products:", fetchedProducts.map { $0.id })
+        } catch {
+            print("❌ Failed to fetch products:", error)
         }
     }
-        
-        
-    private func listenForTransaction()  {
-        Task { for await update in Transaction.updates {
-            print("in task")
-            if case .verified(let transaction) = update, transaction.productID == productIdentifier {
+    
+    // MARK: - Purchase Product
+    func purchase(_ product: Product) async -> Bool {
+        do {
+            let result = try await product.purchase()
+            
+            switch result {
+            case .success(let verification):
+                let transaction = try checkVerified(verification)
+                
+                // For consumables, finish transaction immediately
                 await transaction.finish()
-                await MainActor.run {
-                    self.isPurchased = true
-                }
-                print("Step 3 Solid")
-            } else {
-                print("bs")
+                
+                await updatePurchasedProducts()
+                print("✅ Purchase successful:", transaction.productID)
+                return true
+                
+            case .userCancelled:
+                print("⚠️ User cancelled purchase")
+                return false
+            case .pending:
+                print("⏳ Purchase pending")
+                return false
+            @unknown default:
+                print("❌ Unknown purchase result")
+                return false
             }
-        }}
+        } catch {
+            purchaseError = error
+            print("❌ Purchase failed:", error)
+            return false
+        }
     }
-        
+    
+    // MARK: - Verify Transaction
+    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+        switch result {
+        case .unverified(_, let error):
+            throw error
+        case .verified(let safe):
+            return safe
+        }
+    }
+    
+    // MARK: - Update Purchased Products
+    func updatePurchasedProducts() async {
+        do {
+            var purchased: [Product] = []
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let transaction) = result {
+                    if let product = products.first(where: { $0.id == transaction.productID }) {
+                        purchased.append(product)
+                    }
+                }
+            }
+            purchasedProducts = purchased
+            print(purchasedProducts)
+        } catch {
+            print("❌ Failed to update purchased products:", error)
+        }
+    }
+    
+    // MARK: - Get product by ID
+    func product(for id: String) -> Product? {
+        return products.first(where: { $0.id == id })
+    }
 }
+
+
 
 struct ShopView: View {
     
     @EnvironmentObject var giftData: GiftData
-    @StateObject private var store = StoreViewModel()
+    @StateObject private var iap = IAPManager.shared
     @State private var productHolder: Bool = false
     @State private var productFinished: Bool = false
     @State private var productActive: Bool = false
@@ -100,42 +155,68 @@ struct ShopView: View {
     
     var body: some View {
         List {
-            if (curUser.productReceiving ?? false) == true {
-                Text("Enjoy, someone thinks youre special.")
-            } else {
-                if curUser.productHolder == false {
-                    if let product = store.product {
-                        Text("Purchased: \(store.isPurchased ? "Yes" : "No")")
-                        Button {
-                            Task { await store.purchase()}
-                            print(store.isPurchased)
-
-                        } label: {
-                            Text(store.isPurchased ? "Purchased" : "Buy \(product.displayPrice)")
-                        }
-                        .buttonStyle(ButtonWhiteStyle())
-                        .disabled(store.isPurchased)
-                    }
-                    else {
-                        Text("Not Propogated")
-                    }
-                } else {
-                    if curUser.productFinished == false {
-                        Button("Product Setup"){
-                            showSetupView = true
-                        }
-                    } else {
-                        if curUser.productActive == false {
-                            Button("Copy Gift Link") {
-                                let texts = "zohaibsyedk.github.io/gifts/\(curUser.userId)"
-                                UIPasteboard.general.string = texts
+            if productHolder == false {
+                if let gift = iap.product(for: "com.lovely.app.gift") {
+                                Button("Buy Gift") {
+                                    Task {
+                                        self.productHolder = await iap.purchase(gift)
+                                    }
+                                }
+                            } else {
+                                Text("Loading products...")
                             }
-                        } else {
-                            Text("View Progress")
-                        }
-                    }
-                }
+                            
+                            if !iap.purchasedProducts.isEmpty {
+                                Text("Purchased: \(iap.purchasedProducts.map { $0.displayName }.joined(separator: ", "))")
+                            }
+                            
+                            if let error = iap.purchaseError {
+                                Text("Error: \(error.localizedDescription)")
+                                    .foregroundColor(.red)
+                            }
+            } else {
+                Text("BAUGHT")
             }
+//            if (curUser.productReceiving ?? false) == true {
+//                Text("Enjoy, someone thinks youre special.")
+//            } else {
+//                if curUser.productHolder == false {
+//                    if let gift = store.product(for: "com.lovely.app.gift") {
+//                        Text("Purchased: \(store.purchasedProducts.isEmpty ? "NO" : "YES")")
+//                        Button {
+//                            Task { await store.purchase(gift)}
+//                            print(store.purchasedProducts.isEmpty ? "Fail" : "Success")
+//
+//                        } label: {
+//                            Text(store.purchasedProducts.isEmpty ? "Buy $15" : "Purchased")
+//                        }
+//                        .buttonStyle(ButtonWhiteStyle())
+//                        .disabled(!store.purchasedProducts.isEmpty)
+//                    }
+//                    else {
+//                        Text("Loading")
+//                    }
+//                    if let error = store.purchaseError {
+//                        Text("Error: \(error.localizedDescription)")
+//                            .foregroundColor(.red)
+//                    }
+//                } else {
+//                    if curUser.productFinished == false {
+//                        Button("Product Setup"){
+//                            showSetupView = true
+//                        }
+//                    } else {
+//                        if curUser.productActive == false {
+//                            Button("Copy Gift Link") {
+//                                let texts = "zohaibsyedk.github.io/gifts/\(curUser.userId)"
+//                                UIPasteboard.general.string = texts
+//                            }
+//                        } else {
+//                            Text("View Progress")
+//                        }
+//                    }
+//                }
+//            }
             
         }
         .onAppear {
@@ -159,9 +240,9 @@ struct ShopView: View {
                 SetupView(curUser: $curUser, curGift: $curGift, update: $update, authUser: $authUser)
             }
         }
-        .onChange(of: store.isPurchased) { (isPurchased) in
-                onAppearRan = false
-        }
+//        .onChange(of: store.purchasedProducts) { (isPurchased) in
+//                onAppearRan = false
+//        }
     }
 }
 
